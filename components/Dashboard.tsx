@@ -3,7 +3,7 @@ import {
   Play, Pause, RefreshCw, Calendar as CalendarIcon, 
   Youtube, TrendingUp, BrainCircuit, 
   Database, Brain, ShieldAlert, CheckCircle2, 
-  Clock, Zap, Code2, ArrowRight, ChevronLeft, ChevronRight
+  Clock, Zap, Code2, ArrowRight, ChevronLeft, ChevronRight, HardDrive
 } from 'lucide-react';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -21,6 +21,7 @@ interface DashboardProps {
   onUpdateTopic?: (updatedTopic: Topic) => void;
   activePomodoroTopicId?: string | null;
   setActivePomodoroTopicId?: (topicId: string | null) => void;
+  onOpenWorkspace?: () => void;
 }
 
 // Dados baseados na Curva de Ebbinghaus
@@ -41,6 +42,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onSelectTopic, 
   onProtectedAction,
   onUpdateTopic,
+  onOpenWorkspace,
 }) => {
   // Pomodoro State (sem dropdown de seleção de matérias para interface limpa)
   const [pomodoroDuration, setPomodoroDuration] = useState<number>(30 * 60); // 30 min default
@@ -326,7 +328,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
         </GlassCard>
 
-        {/* CARD 3: VIDEOAULAS & GOOGLE (SEM ACESSOS RÁPIDOS) */}
+        {/* CARD 3: VIDEOAULAS & GOOGLE DRIVE */}
         <div className="flex flex-col justify-between gap-4">
           <GlassCard 
             onClick={() => onProtectedAction(() => window.open('https://youtube.com', '_blank'))} 
@@ -345,19 +347,25 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </GlassCard>
 
           <GlassCard 
-            onClick={() => onProtectedAction(() => window.open('https://colab.research.google.com', '_blank'))} 
-            className="flex-1 flex items-center justify-between p-5 hover:bg-amber-600/15 border-white/10 hover:border-amber-500/40 group cursor-pointer transition-all"
+            onClick={() => {
+              if (onOpenWorkspace) {
+                onOpenWorkspace();
+              } else {
+                onProtectedAction(() => window.open('https://drive.google.com', '_blank'));
+              }
+            }} 
+            className="flex-1 flex items-center justify-between p-5 hover:bg-cyan-600/15 border-white/10 hover:border-cyan-500/40 group cursor-pointer transition-all"
           >
             <div className="flex items-center gap-4">
-              <div className="w-13 h-13 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 group-hover:scale-105 transition-transform shadow-lg">
-                <Code2 size={28} />
+              <div className="w-13 h-13 rounded-2xl bg-cyan-500/15 border border-cyan-500/30 flex items-center justify-center text-cyan-400 group-hover:scale-105 transition-transform shadow-lg">
+                <HardDrive size={28} />
               </div>
               <div>
-                <h4 className="text-base font-bold text-white group-hover:text-amber-300 transition-colors">Google Colab</h4>
-                <p className="text-xs text-gray-400">Ambiente Jupyter para código</p>
+                <h4 className="text-base font-bold text-white group-hover:text-cyan-300 transition-colors">Google Drive</h4>
+                <p className="text-xs text-gray-400">Armazenamento e backup de notas</p>
               </div>
             </div>
-            <ArrowRight size={18} className="text-gray-500 group-hover:text-amber-400 group-hover:translate-x-1 transition-all" />
+            <ArrowRight size={18} className="text-gray-500 group-hover:text-cyan-400 group-hover:translate-x-1 transition-all" />
           </GlassCard>
         </div>
 

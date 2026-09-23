@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { User, Topic, ViewState, TrackId, TrackInfo } from './types';
 import { AuthModal } from './components/AuthModal';
+import { WorkspaceModal } from './components/WorkspaceModal';
 import { Dashboard } from './components/Dashboard';
 import { TrackDetail } from './components/TrackDetail';
 import { TopicDetail } from './components/TopicDetail';
 import { GeminiChat } from './components/GeminiChat';
 import { INITIAL_SYLLABUS_TOPICS, TRACKS_DATA } from './syllabusData';
+import { initAuth, getIdToken } from './src/lib/firebase';
 import { 
   LogOut, Instagram, Sparkles, RotateCcw, BrainCircuit, 
   CheckCircle2, Clock, BookOpen, UserCheck, MessageSquare 
@@ -33,6 +35,7 @@ function App() {
   });
 
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showWorkspaceModal, setShowWorkspaceModal] = useState(false);
   const [currentView, setCurrentView] = useState<ViewState>(ViewState.DASHBOARD);
   const [selectedTrackId, setSelectedTrackId] = useState<TrackId | null>(null);
   const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null);
@@ -54,6 +57,70 @@ function App() {
     }
     return INITIAL_SYLLABUS_TOPICS;
   });
+
+  // Sync Firebase Auth with Cloud SQL backend
+  useEffect(() => {
+    const unsubscribe = initAuth(
+      async (firebaseUser, _accessToken, idToken) => {
+        setUser({
+          name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'Rodrigo Rahal',
+          email: firebaseUser.email || 'rodrigorahal@gmail.com',
+          phone: firebaseUser.phoneNumber || '',
+          role: 'Liderança Executiva em TI'
+        });
+
+        // Sync with Cloud SQL via Express backend
+        if (idToken) {
+          try {
+            await fetch('/api/auth/sync', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${idToken}`,
+              },
+              body: JSON.stringify({
+                name: firebaseUser.displayName || 'Rodrigo Rahal',
+              }),
+            });
+
+            // Load saved topic progress from Cloud SQL
+            const progRes = await fetch('/api/topics/progress', {
+              headers: { Authorization: `Bearer ${idToken}` },
+            });
+            if (progRes.ok) {
+              const resData = await progRes.json();
+              if (resData.success && Array.isArray(resData.data) && resData.data.length > 0) {
+                setTopics(prev => {
+                  return prev.map(t => {
+                    const match = resData.data.find((p: any) => p.topicId === t.id);
+                    if (match) {
+                      return {
+                        ...t,
+                        progress: match.progress ?? t.progress,
+                        studyMinutes: match.studyMinutes ?? t.studyMinutes,
+                        notes: match.notes ?? t.notes,
+                        lastStudied: match.lastStudied ?? t.lastStudied,
+                        nextReviewDate: match.nextReviewDate ?? t.nextReviewDate,
+                        deliverable: t.deliverable ? {
+                          ...t.deliverable,
+                          completed: match.deliverableCompleted ?? t.deliverable.completed,
+                          url: match.deliverableUrl ?? t.deliverable.url,
+                        } : undefined,
+                      };
+                    }
+                    return t;
+                  });
+                });
+              }
+            }
+          } catch (err) {
+            console.error('Error syncing with Cloud SQL:', err);
+          }
+        }
+      }
+    );
+    return () => unsubscribe();
+  }, []);
 
   // Save topics whenever they change
   useEffect(() => {
@@ -99,10 +166,37 @@ function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleUpdateTopic = (updatedTopic: Topic) => {
+  const handleUpdateTopic = async (updatedTopic: Topic) => {
     setTopics(prev => prev.map(t => t.id === updatedTopic.id ? updatedTopic : t));
     if (selectedTopic && selectedTopic.id === updatedTopic.id) {
       setSelectedTopic(updatedTopic);
+    }
+
+    // Persist to Cloud SQL PostgreSQL
+    try {
+      const idToken = await getIdToken();
+      if (idToken) {
+        await fetch('/api/topics/progress', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${idToken}`,
+          },
+          body: JSON.stringify({
+            topicId: updatedTopic.id,
+            progress: updatedTopic.progress,
+            studyMinutes: updatedTopic.studyMinutes,
+            notes: updatedTopic.notes,
+            deliverableCompleted: updatedTopic.deliverable?.completed,
+            deliverableUrl: updatedTopic.deliverable?.url,
+            lastStudied: updatedTopic.lastStudied,
+            nextReviewDate: updatedTopic.nextReviewDate,
+            techniquesCompleted: updatedTopic.techniques?.filter(tc => tc.completed).map(tc => tc.id),
+          }),
+        });
+      }
+    } catch (err) {
+      console.error('Error saving progress to Cloud SQL:', err);
     }
   };
 
@@ -207,6 +301,7 @@ function App() {
             onUpdateTopic={handleUpdateTopic}
             activePomodoroTopicId={activePomodoroTopicId}
             setActivePomodoroTopicId={setActivePomodoroTopicId}
+            onOpenWorkspace={() => setShowWorkspaceModal(true)}
           />
         )}
 
@@ -244,11 +339,30 @@ function App() {
 
       {/* Global AI Mentor Drawer / Modal */}
       {showGlobalChat && (
-        <div className="fixed bottom-6 right-6 z-50 w-full max-w-md sm:max-w-lg shadow-2xl animate-fade-in-up">
+        <div className="fixed bottom-6 right-6 z-50 w-full max-w-md sm:max-w-xl shadow-2xl animate-fade-in-up">
           <div className="relative">
-            <GeminiChat onClose={() => setShowGlobalChat(false)} />
+            <GeminiChat 
+              onClose={() => setShowGlobalChat(false)} 
+              activeTopic={selectedTopic}
+              topics={topics}
+            />
           </div>
         </div>
+      )}
+
+      {/* Floating Gemini AI Launcher Button */}
+      {!showGlobalChat && (
+        <button
+          onClick={() => setShowGlobalChat(true)}
+          className="fixed bottom-6 right-6 z-40 flex items-center gap-2.5 px-4 py-3 bg-gradient-to-r from-brand-primary via-indigo-600 to-brand-accent text-white rounded-full shadow-2xl hover:scale-105 transition-all group border border-white/20"
+          title="Abrir Mentor Executivo Gemini"
+        >
+          <div className="relative">
+            <Sparkles size={18} className="animate-pulse" />
+            <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-emerald-400"></span>
+          </div>
+          <span className="text-xs font-bold tracking-wide">Mentor Gemini</span>
+        </button>
       )}
 
       {/* Auth / Profile Modal */}
@@ -256,6 +370,13 @@ function App() {
         isOpen={showAuthModal} 
         onClose={() => setShowAuthModal(false)}
         onRegister={handleRegister}
+      />
+
+      {/* Google Workspace Modal (Drive, Calendar, Tasks) */}
+      <WorkspaceModal
+        isOpen={showWorkspaceModal}
+        onClose={() => setShowWorkspaceModal(false)}
+        topics={topics}
       />
 
       {/* Footer */}

@@ -29,6 +29,7 @@ export interface Deliverable {
   description: string;
   codeSnippet?: string;
   completed: boolean;
+  url?: string;
 }
 
 export interface StudyPrompt {
