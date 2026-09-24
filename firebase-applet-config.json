@@ -3,6 +3,7 @@
   "appId": "1:532289893852:web:b245ce2a5cca436ffc8b19",
   "apiKey": "AIzaSyB9YMGsL7kkLO_ek-2FE5pIrgi2SK2VnWQ",
   "authDomain": "gen-lang-client-0996340635.firebaseapp.com",
+  "firestoreDatabaseId": "ai-studio-racanlearnplan-2dc89945-a04f-4330-8634-2fa401c24f50",
   "storageBucket": "gen-lang-client-0996340635.firebasestorage.app",
   "messagingSenderId": "532289893852",
   "measurementId": "",

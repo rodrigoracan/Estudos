@@ -299,10 +299,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
         </GlassCard>
 
-        {/* CARD 2: CALENDÁRIO INTERATIVO */}
+        {/* CARD 2: CALENDÁRIO */}
         <GlassCard className="flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between mb-2 pb-2 border-b border-white/10">
+            <div className="flex items-center justify-between mb-3 pb-2 border-b border-white/10">
               <span className="text-xs uppercase text-gray-300 font-bold tracking-wider flex items-center gap-1.5">
                 <CalendarIcon size={15} className="text-brand-accent" />
                 Calendário
@@ -315,112 +315,45 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 >
                   Hoje
                 </button>
-                <span className="text-[10px] text-brand-accent bg-brand-primary/20 px-2 py-0.5 rounded-full font-mono font-bold border border-brand-primary/30">
+                <span className="text-[10px] text-brand-accent bg-brand-primary/20 px-2.5 py-0.5 rounded-full font-mono font-bold border border-brand-primary/30">
                   {currentDate.getFullYear()}
                 </span>
               </div>
             </div>
 
-            {/* Navegador de Mês */}
-            <div className="flex items-center justify-between mb-2 px-1">
+            <div className="flex items-center justify-between mb-3 px-1">
               <button 
-                onClick={() => changeMonth(-1)} 
-                className="p-1 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition-colors"
-                title="Mês anterior"
+                onClick={() => changeDay(-1)} 
+                className="p-1.5 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition-colors"
+                title="Dia anterior"
               >
-                <ChevronLeft size={16}/>
+                <ChevronLeft size={18}/>
               </button>
               <div className="text-center">
-                <span className="text-sm font-bold text-white tracking-wide">
+                <span className="block text-lg font-bold text-white">
                   {monthNames[currentDate.getMonth()]}
                 </span>
               </div>
               <button 
-                onClick={() => changeMonth(1)} 
-                className="p-1 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition-colors"
-                title="Próximo mês"
+                onClick={() => changeDay(1)} 
+                className="p-1.5 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition-colors"
+                title="Próximo dia"
               >
-                <ChevronRight size={16}/>
+                <ChevronRight size={18}/>
               </button>
-            </div>
-
-            {/* Stepper do Dia Ativo: atualiza o número do dia e o dia da semana juntos */}
-            <div className="flex items-center justify-between p-2.5 bg-brand-dark/70 rounded-xl border border-white/5 mb-2.5">
-              <button
-                onClick={() => changeDay(-1)}
-                className="p-1.5 hover:bg-white/10 text-gray-400 hover:text-brand-accent rounded-lg transition-colors"
-                title="Dia anterior (muda número e dia da semana)"
-              >
-                <ChevronLeft size={18} />
-              </button>
-
-              <div className="text-center">
-                <div className="flex items-center justify-center gap-1.5">
-                  <span className="text-3xl font-extrabold text-brand-accent font-mono">
-                    {currentDate.getDate()}
-                  </span>
-                  <span className="text-xs text-gray-400">de</span>
-                  <span className="text-xs text-gray-300 font-medium">
-                    {monthNames[currentDate.getMonth()]}
-                  </span>
-                </div>
-                <p className="text-gray-300 text-xs capitalize mt-0.5 font-medium">
-                  {currentDate.toLocaleDateString('pt-BR', { weekday: 'long' })}
-                </p>
-              </div>
-
-              <button
-                onClick={() => changeDay(1)}
-                className="p-1.5 hover:bg-white/10 text-gray-400 hover:text-brand-accent rounded-lg transition-colors"
-                title="Próximo dia (muda número e dia da semana)"
-              >
-                <ChevronRight size={18} />
-              </button>
-            </div>
-
-            {/* Mini Grid com os dias do mês */}
-            <div>
-              <div className="grid grid-cols-7 gap-1 text-center text-[10px] text-gray-400 font-medium mb-1">
-                <span>D</span><span>S</span><span>T</span><span>Q</span><span>Q</span><span>S</span><span>S</span>
-              </div>
-              <div className="grid grid-cols-7 gap-1 text-center">
-                {Array.from({ 
-                  length: new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay() 
-                }).map((_, i) => (
-                  <span key={`empty-${i}`} className="h-6" />
-                ))}
-                {Array.from({ 
-                  length: new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate() 
-                }, (_, i) => i + 1).map((day) => {
-                  const isSelected = day === currentDate.getDate();
-                  const isToday = 
-                    new Date().getDate() === day &&
-                    new Date().getMonth() === currentDate.getMonth() &&
-                    new Date().getFullYear() === currentDate.getFullYear();
-
-                  return (
-                    <button
-                      key={day}
-                      onClick={() => selectDay(day)}
-                      className={`h-6 w-full rounded flex items-center justify-center text-[11px] font-mono transition-all ${
-                        isSelected
-                          ? 'bg-brand-accent text-slate-950 font-bold shadow-md'
-                          : isToday
-                          ? 'border border-brand-accent/60 text-brand-accent font-semibold'
-                          : 'text-gray-300 hover:bg-white/10 hover:text-white'
-                      }`}
-                    >
-                      {day}
-                    </button>
-                  );
-                })}
-              </div>
             </div>
           </div>
 
-          <div className="pt-2 text-center border-t border-white/5 text-[10px] text-gray-400 flex items-center justify-center gap-1.5 mt-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-            <span>Ciclo diário de estudos ativo</span>
+          <div className="text-center p-4 bg-brand-dark/60 rounded-xl border border-white/5 my-1">
+            <p className="text-gray-400 text-[10px] uppercase tracking-wider mb-0.5">Sessão Ativa</p>
+            <p className="text-4xl font-extrabold text-brand-accent font-mono">{currentDate.getDate()}</p>
+            <p className="text-gray-300 text-xs capitalize mt-0.5 font-medium">
+              {currentDate.toLocaleDateString('pt-BR', { weekday: 'long' })}
+            </p>
+          </div>
+
+          <div className="pt-2 text-center border-t border-white/5 text-[11px] text-gray-500">
+            Ciclo diário de estudos ativo
           </div>
         </GlassCard>
 
@@ -433,9 +366,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             className="flex-1 flex items-center justify-between px-6 py-6 rounded-2xl bg-transparent hover:bg-white/5 border border-white/10 hover:border-red-500/40 group cursor-pointer transition-all shadow-sm"
             title="Abrir YouTube"
           >
-            <div className="flex items-center gap-3">
-              <YouTubeBrandLogo className="h-9 w-auto group-hover:scale-105 transition-transform" />
-            </div>
+            <YouTubeBrandLogo />
             <ArrowRight size={18} className="text-gray-500 group-hover:text-red-400 group-hover:translate-x-1 transition-all" />
           </div>
 
@@ -451,9 +382,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             className="flex-1 flex items-center justify-between px-6 py-6 rounded-2xl bg-transparent hover:bg-white/5 border border-white/10 hover:border-cyan-500/40 group cursor-pointer transition-all shadow-sm"
             title="Abrir Google Drive"
           >
-            <div className="flex items-center gap-3">
-              <GoogleDriveBrandLogo className="h-9 w-auto group-hover:scale-105 transition-transform" />
-            </div>
+            <GoogleDriveBrandLogo />
             <ArrowRight size={18} className="text-gray-500 group-hover:text-cyan-400 group-hover:translate-x-1 transition-all" />
           </div>
 
@@ -462,7 +391,95 @@ export const Dashboard: React.FC<DashboardProps> = ({
       </div>
 
       {/* ============================================================== */}
-      {/* 2. QUADRO DO MEIO: CURVA, APLICAÇÃO DE ESTUDO & REVISÃO         */}
+      {/* 2. TRILHA DO CONHECIMENTO (LOGO ABAIXO DO QUADRO SUPERIOR)     */}
+      {/* ============================================================== */}
+      <div className="space-y-4 pt-1">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {trackStats.map((track) => {
+            return (
+              <div
+                key={track.id}
+                onClick={() => onSelectTrack(track.id)}
+                className="group cursor-pointer rounded-2xl p-6 transition-all duration-300 relative overflow-hidden border bg-brand-surface/90 hover:bg-brand-surface border-white/10 hover:border-white/30 hover:scale-[1.01] shadow-xl hover:shadow-2xl flex flex-col justify-between"
+              >
+                {/* Glow suave */}
+                <div 
+                  className="absolute top-0 right-0 w-32 h-32 rounded-full blur-2xl opacity-15 pointer-events-none group-hover:opacity-30 transition-opacity"
+                  style={{ backgroundColor: track.color }}
+                />
+
+                <div>
+                  {/* Topo do Card da Trilha: Ícone + Número de Matérias */}
+                  <div className="flex items-center justify-between mb-4">
+                    <div 
+                      className="w-12 h-12 rounded-xl flex items-center justify-center text-white shadow-lg transition-transform group-hover:scale-105"
+                      style={{ backgroundColor: `${track.color}25`, border: `1px solid ${track.color}60` }}
+                    >
+                      {track.iconName === 'Database' && <Database size={24} style={{ color: track.color }} />}
+                      {track.iconName === 'Brain' && <Brain size={24} style={{ color: track.color }} />}
+                      {track.iconName === 'ShieldAlert' && <ShieldAlert size={24} style={{ color: track.color }} />}
+                    </div>
+
+                    <span 
+                      className="text-xs font-mono font-bold px-3 py-1 rounded-full border"
+                      style={{ 
+                        backgroundColor: `${track.color}15`, 
+                        color: track.color, 
+                        borderColor: `${track.color}40` 
+                      }}
+                    >
+                      {track.totalTopics} Matérias
+                    </span>
+                  </div>
+
+                  {/* Nome Principal da Trilha */}
+                  <h3 className="text-xl font-bold text-white group-hover:text-white transition-colors mb-4">
+                    {track.name}
+                  </h3>
+                </div>
+
+                <div className="space-y-4 pt-2 border-t border-white/10">
+                  {/* Progresso da Trilha */}
+                  <div className="space-y-1.5">
+                    <div className="flex justify-between text-xs font-medium">
+                      <span className="text-gray-400">Progresso</span>
+                      <span className="font-mono font-bold text-white">{track.progress}%</span>
+                    </div>
+                    <div className="w-full bg-slate-900 h-2 rounded-full overflow-hidden border border-white/5">
+                      <div 
+                        className="h-full rounded-full transition-all duration-700"
+                        style={{ 
+                          width: `${track.progress}%`,
+                          backgroundColor: track.color 
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Horas, Notebooks e Acesso a Matérias */}
+                  <div className="flex items-center justify-between text-xs pt-1 border-t border-white/5">
+                    <span className="text-gray-400 font-mono text-[11px]">
+                      ⏱️ {track.studyHours}h • 💻 {track.deliverablesDone}/{track.totalTopics} Notebooks
+                    </span>
+                    
+                    <span 
+                      className="font-bold inline-flex items-center gap-1.5 group-hover:translate-x-1 transition-transform"
+                      style={{ color: track.color }}
+                    >
+                      Acessar Matérias
+                      <ArrowRight size={14} />
+                    </span>
+                  </div>
+                </div>
+
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ============================================================== */}
+      {/* 3. QUADRO DE ANÁLISE: CURVA, APLICAÇÃO DE ESTUDO & REVISÃO     */}
       {/* ============================================================== */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
         
@@ -603,94 +620,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
         </GlassCard>
 
-      </div>
-
-      {/* ============================================================== */}
-      {/* 3. QUADRO INFERIOR (ABAIXO): AS 3 TRILHAS LIMPAS               */}
-      {/* ============================================================== */}
-      <div className="space-y-4 pt-2">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {trackStats.map((track) => {
-            return (
-              <div
-                key={track.id}
-                onClick={() => onSelectTrack(track.id)}
-                className="group cursor-pointer rounded-2xl p-6 transition-all duration-300 relative overflow-hidden border bg-brand-surface/90 hover:bg-brand-surface border-white/10 hover:border-white/30 hover:scale-[1.01] shadow-xl hover:shadow-2xl flex flex-col justify-between"
-              >
-                {/* Glow suave */}
-                <div 
-                  className="absolute top-0 right-0 w-32 h-32 rounded-full blur-2xl opacity-15 pointer-events-none group-hover:opacity-30 transition-opacity"
-                  style={{ backgroundColor: track.color }}
-                />
-
-                <div>
-                  {/* Topo do Card da Trilha: Ícone + Número de Matérias */}
-                  <div className="flex items-center justify-between mb-4">
-                    <div 
-                      className="w-12 h-12 rounded-xl flex items-center justify-center text-white shadow-lg transition-transform group-hover:scale-105"
-                      style={{ backgroundColor: `${track.color}25`, border: `1px solid ${track.color}60` }}
-                    >
-                      {track.iconName === 'Database' && <Database size={24} style={{ color: track.color }} />}
-                      {track.iconName === 'Brain' && <Brain size={24} style={{ color: track.color }} />}
-                      {track.iconName === 'ShieldAlert' && <ShieldAlert size={24} style={{ color: track.color }} />}
-                    </div>
-
-                    <span 
-                      className="text-xs font-mono font-bold px-3 py-1 rounded-full border"
-                      style={{ 
-                        backgroundColor: `${track.color}15`, 
-                        color: track.color, 
-                        borderColor: `${track.color}40` 
-                      }}
-                    >
-                      {track.totalTopics} Matérias
-                    </span>
-                  </div>
-
-                  {/* Nome Principal da Trilha */}
-                  <h3 className="text-xl font-bold text-white group-hover:text-white transition-colors mb-4">
-                    {track.name}
-                  </h3>
-                </div>
-
-                <div className="space-y-4 pt-2 border-t border-white/10">
-                  {/* Progresso da Trilha */}
-                  <div className="space-y-1.5">
-                    <div className="flex justify-between text-xs font-medium">
-                      <span className="text-gray-400">Progresso</span>
-                      <span className="font-mono font-bold text-white">{track.progress}%</span>
-                    </div>
-                    <div className="w-full bg-slate-900 h-2 rounded-full overflow-hidden border border-white/5">
-                      <div 
-                        className="h-full rounded-full transition-all duration-700"
-                        style={{ 
-                          width: `${track.progress}%`,
-                          backgroundColor: track.color 
-                        }}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Horas, Notebooks e Acesso a Matérias */}
-                  <div className="flex items-center justify-between text-xs pt-1 border-t border-white/5">
-                    <span className="text-gray-400 font-mono text-[11px]">
-                      ⏱️ {track.studyHours}h • 💻 {track.deliverablesDone}/{track.totalTopics} Notebooks
-                    </span>
-                    
-                    <span 
-                      className="font-bold inline-flex items-center gap-1.5 group-hover:translate-x-1 transition-transform"
-                      style={{ color: track.color }}
-                    >
-                      Acessar Matérias
-                      <ArrowRight size={14} />
-                    </span>
-                  </div>
-                </div>
-
-              </div>
-            );
-          })}
-        </div>
       </div>
 
     </div>
