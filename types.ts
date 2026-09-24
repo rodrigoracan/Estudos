@@ -1,4 +1,4 @@
-export type TrackId = 'dados' | 'ia' | 'cyber';
+export type TrackId = string;
 
 export interface TrackInfo {
   id: TrackId;
@@ -7,7 +7,7 @@ export interface TrackInfo {
   description: string;
   color: string;
   accentColor: string;
-  iconName: 'Database' | 'Brain' | 'ShieldAlert';
+  iconName: string;
 }
 
 export interface Technique {

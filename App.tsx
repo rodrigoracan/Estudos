@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { User, Topic, ViewState, TrackId, TrackInfo } from './types';
 import { AuthModal } from './components/AuthModal';
 import { WorkspaceModal } from './components/WorkspaceModal';
+import { TrackModal } from './components/TrackModal';
+import { TopicModal } from './components/TopicModal';
+import { ConfirmModal } from './components/ConfirmModal';
 import { Dashboard } from './components/Dashboard';
 import { TrackDetail } from './components/TrackDetail';
 import { TopicDetail } from './components/TopicDetail';
@@ -14,6 +17,7 @@ import {
 } from 'lucide-react';
 
 const STORAGE_KEY_TOPICS = 'racan_learn_plan_2026_topics_v3';
+const STORAGE_KEY_TRACKS = 'racan_learn_plan_2026_tracks_v2';
 const STORAGE_KEY_USER = 'racan_learn_plan_2026_user';
 
 const DEFAULT_USER: User = {
@@ -42,6 +46,46 @@ function App() {
   const [activePomodoroTopicId, setActivePomodoroTopicId] = useState<string | null>(null);
   const [showGlobalChat, setShowGlobalChat] = useState(false);
 
+  // Load persisted tracks or default
+  const [tracks, setTracks] = useState<TrackInfo[]>(() => {
+    try {
+      const savedTracks = localStorage.getItem(STORAGE_KEY_TRACKS);
+      if (savedTracks) {
+        const parsed = JSON.parse(savedTracks);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
+      }
+    } catch (e) {
+      console.warn("Error reading localStorage tracks:", e);
+    }
+    return TRACKS_DATA;
+  });
+
+  // Track & Topic Modals State
+  const [trackModalState, setTrackModalState] = useState<{
+    isOpen: boolean;
+    initialTrack?: TrackInfo | null;
+  }>({ isOpen: false, initialTrack: null });
+
+  const [topicModalState, setTopicModalState] = useState<{
+    isOpen: boolean;
+    trackId: string;
+    trackName: string;
+    trackColor?: string;
+    initialTopic?: Topic | null;
+    existingCount?: number;
+  }>({ isOpen: false, trackId: '', trackName: '', initialTopic: null });
+
+  const [confirmModalState, setConfirmModalState] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+    isDanger?: boolean;
+    confirmText?: string;
+  }>({ isOpen: false, title: '', message: '', onConfirm: () => {} });
+
   // Load persisted topics or default
   const [topics, setTopics] = useState<Topic[]>(() => {
     try {
@@ -57,6 +101,15 @@ function App() {
     }
     return INITIAL_SYLLABUS_TOPICS;
   });
+
+  // Save tracks to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY_TRACKS, JSON.stringify(tracks));
+    } catch (e) {
+      console.error("Error saving tracks to localStorage:", e);
+    }
+  }, [tracks]);
 
   // Sync Firebase Auth with Cloud SQL backend
   useEffect(() => {
@@ -164,6 +217,104 @@ function App() {
     setSelectedTopic(topic);
     setCurrentView(ViewState.TOPIC_DETAIL);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Track CRUD Handlers
+  const handleOpenAddTrack = () => {
+    setTrackModalState({ isOpen: true, initialTrack: null });
+  };
+
+  const handleOpenEditTrack = (track: TrackInfo) => {
+    setTrackModalState({ isOpen: true, initialTrack: track });
+  };
+
+  const handleSaveTrack = (savedTrack: TrackInfo) => {
+    setTracks(prev => {
+      const exists = prev.some(t => t.id === savedTrack.id);
+      if (exists) {
+        return prev.map(t => t.id === savedTrack.id ? savedTrack : t);
+      }
+      return [...prev, savedTrack];
+    });
+  };
+
+  const handleDeleteTrack = (trackId: string) => {
+    const targetTrack = tracks.find(t => t.id === trackId);
+    const linkedTopicsCount = topics.filter(t => t.trackId === trackId).length;
+
+    setConfirmModalState({
+      isOpen: true,
+      title: 'Excluir Área de Estudo',
+      message: `Tem certeza que deseja excluir a área "${targetTrack?.name || 'Selecionada'}"? ${
+        linkedTopicsCount > 0 
+          ? `Todas as ${linkedTopicsCount} matéria(s) associada(s) a ela também serão removidas do plano.`
+          : 'Esta ação não poderá ser desfeita.'
+      }`,
+      confirmText: 'Sim, Excluir Área',
+      isDanger: true,
+      onConfirm: () => {
+        setTracks(prev => prev.filter(t => t.id !== trackId));
+        setTopics(prev => prev.filter(t => t.trackId !== trackId));
+        if (selectedTrackId === trackId) {
+          setSelectedTrackId(null);
+          setCurrentView(ViewState.DASHBOARD);
+        }
+      }
+    });
+  };
+
+  // Topic CRUD Handlers
+  const handleOpenAddTopic = (trackId: string) => {
+    const track = tracks.find(t => t.id === trackId);
+    const existingCount = topics.filter(t => t.trackId === trackId).length;
+    setTopicModalState({
+      isOpen: true,
+      trackId,
+      trackName: track?.name || 'Área de Estudo',
+      trackColor: track?.color || '#06b6d4',
+      initialTopic: null,
+      existingCount
+    });
+  };
+
+  const handleOpenEditTopic = (topic: Topic) => {
+    const track = tracks.find(t => t.id === topic.trackId);
+    setTopicModalState({
+      isOpen: true,
+      trackId: topic.trackId,
+      trackName: track?.name || topic.category,
+      trackColor: track?.color || '#06b6d4',
+      initialTopic: topic,
+      existingCount: topics.filter(t => t.trackId === topic.trackId).length
+    });
+  };
+
+  const handleSaveTopic = (savedTopic: Topic) => {
+    const exists = topics.some(t => t.id === savedTopic.id);
+    if (exists) {
+      handleUpdateTopic(savedTopic);
+    } else {
+      setTopics(prev => [...prev, savedTopic]);
+      handleUpdateTopic(savedTopic);
+    }
+  };
+
+  const handleDeleteTopic = (topicId: string) => {
+    const targetTopic = topics.find(t => t.id === topicId);
+    setConfirmModalState({
+      isOpen: true,
+      title: 'Excluir Matéria',
+      message: `Tem certeza que deseja excluir a matéria "${targetTopic?.title || 'Selecionada'}"? Seu progresso e entregáveis serão removidos.`,
+      confirmText: 'Sim, Excluir Matéria',
+      isDanger: true,
+      onConfirm: () => {
+        setTopics(prev => prev.filter(t => t.id !== topicId));
+        if (selectedTopic?.id === topicId) {
+          setSelectedTopic(null);
+          setCurrentView(ViewState.TRACK_DETAIL);
+        }
+      }
+    });
   };
 
   const handleUpdateTopic = async (updatedTopic: Topic) => {
@@ -295,6 +446,7 @@ function App() {
         {currentView === ViewState.DASHBOARD && (
           <Dashboard 
             topics={topics}
+            tracks={tracks}
             onSelectTrack={handleSelectTrack}
             onSelectTopic={handleSelectTopic}
             onProtectedAction={handleProtectedAction}
@@ -302,20 +454,29 @@ function App() {
             activePomodoroTopicId={activePomodoroTopicId}
             setActivePomodoroTopicId={setActivePomodoroTopicId}
             onOpenWorkspace={() => setShowWorkspaceModal(true)}
+            onAddTrack={handleOpenAddTrack}
+            onEditTrack={handleOpenEditTrack}
+            onDeleteTrack={handleDeleteTrack}
           />
         )}
 
         {currentView === ViewState.TRACK_DETAIL && selectedTrackId && (
           <TrackDetail 
-            track={TRACKS_DATA.find(t => t.id === selectedTrackId) || TRACKS_DATA[0]}
+            track={tracks.find(t => t.id === selectedTrackId) || tracks[0] || TRACKS_DATA[0]}
             topics={topics}
+            allTracks={tracks}
             onBack={() => {
               setCurrentView(ViewState.DASHBOARD);
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }}
             onSelectTopic={handleSelectTopic}
             onSelectOtherTrack={(trackId) => setSelectedTrackId(trackId)}
-            allTracks={TRACKS_DATA}
+            onAddTrack={handleOpenAddTrack}
+            onEditTrack={handleOpenEditTrack}
+            onDeleteTrack={handleDeleteTrack}
+            onAddTopic={handleOpenAddTopic}
+            onEditTopic={handleOpenEditTopic}
+            onDeleteTopic={handleDeleteTopic}
           />
         )}
 
@@ -364,6 +525,37 @@ function App() {
           <span className="text-xs font-bold tracking-wide">Mentor Gemini</span>
         </button>
       )}
+
+      {/* Track Create/Edit Modal */}
+      <TrackModal
+        isOpen={trackModalState.isOpen}
+        onClose={() => setTrackModalState(prev => ({ ...prev, isOpen: false }))}
+        onSave={handleSaveTrack}
+        initialTrack={trackModalState.initialTrack}
+      />
+
+      {/* Topic Create/Edit Modal */}
+      <TopicModal
+        isOpen={topicModalState.isOpen}
+        onClose={() => setTopicModalState(prev => ({ ...prev, isOpen: false }))}
+        onSave={handleSaveTopic}
+        trackId={topicModalState.trackId}
+        trackName={topicModalState.trackName}
+        trackColor={topicModalState.trackColor}
+        initialTopic={topicModalState.initialTopic}
+        existingCount={topicModalState.existingCount}
+      />
+
+      {/* Confirmation Modal */}
+      <ConfirmModal
+        isOpen={confirmModalState.isOpen}
+        onClose={() => setConfirmModalState(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={confirmModalState.onConfirm}
+        title={confirmModalState.title}
+        message={confirmModalState.message}
+        confirmText={confirmModalState.confirmText || 'Excluir'}
+        isDanger={confirmModalState.isDanger !== false}
+      />
 
       {/* Auth / Profile Modal */}
       <AuthModal 

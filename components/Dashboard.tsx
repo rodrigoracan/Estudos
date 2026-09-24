@@ -2,8 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Play, Pause, RefreshCw, Calendar as CalendarIcon, 
   Youtube, TrendingUp, BrainCircuit, 
-  Database, Brain, ShieldAlert, CheckCircle2, 
-  Clock, Zap, Code2, ArrowRight, ChevronLeft, ChevronRight, HardDrive
+  CheckCircle2, Plus, Edit3, Trash2,
+  Clock, Zap, Code2, ArrowRight, ChevronLeft, ChevronRight, HardDrive, Layers
 } from 'lucide-react';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -11,11 +11,13 @@ import {
 } from 'recharts';
 import { GlassCard } from './ui/GlassCard';
 import { YouTubeBrandLogo, GoogleDriveBrandLogo } from './ui/BrandLogos';
-import { Topic, TrackId } from '../types';
+import { TrackIcon } from './ui/TrackIcon';
+import { Topic, TrackId, TrackInfo } from '../types';
 import { TRACKS_DATA } from '../syllabusData';
 
 interface DashboardProps {
   topics: Topic[];
+  tracks?: TrackInfo[];
   onSelectTrack: (trackId: TrackId) => void;
   onSelectTopic: (topic: Topic) => void;
   onProtectedAction: (action: () => void) => void;
@@ -23,6 +25,9 @@ interface DashboardProps {
   activePomodoroTopicId?: string | null;
   setActivePomodoroTopicId?: (topicId: string | null) => void;
   onOpenWorkspace?: () => void;
+  onAddTrack?: () => void;
+  onEditTrack?: (track: TrackInfo) => void;
+  onDeleteTrack?: (trackId: string) => void;
 }
 
 // Dados baseados na Curva de Ebbinghaus
@@ -39,11 +44,15 @@ const forgettingData = [
 
 export const Dashboard: React.FC<DashboardProps> = ({ 
   topics, 
+  tracks = TRACKS_DATA,
   onSelectTrack,
   onSelectTopic, 
   onProtectedAction,
   onUpdateTopic,
   onOpenWorkspace,
+  onAddTrack,
+  onEditTrack,
+  onDeleteTrack,
 }) => {
   // Pomodoro State (sem dropdown de seleção de matérias para interface limpa)
   const [pomodoroDuration, setPomodoroDuration] = useState<number>(30 * 60); // 30 min default
@@ -131,7 +140,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
   // Track specific stats
   const trackStats = useMemo(() => {
-    return TRACKS_DATA.map(track => {
+    const activeTracks = tracks && tracks.length > 0 ? tracks : TRACKS_DATA;
+    return activeTracks.map(track => {
       const trackTopics = topics.filter(t => t.trackId === track.id);
       const total = trackTopics.length;
       const progress = total > 0 
@@ -149,7 +159,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         topics: trackTopics
       };
     });
-  }, [topics]);
+  }, [tracks, topics]);
 
   // Aggregated study techniques data for BarChart
   const techniqueData = useMemo(() => {
@@ -394,7 +404,32 @@ export const Dashboard: React.FC<DashboardProps> = ({
       {/* 2. TRILHA DO CONHECIMENTO (LOGO ABAIXO DO QUADRO SUPERIOR)     */}
       {/* ============================================================== */}
       <div className="space-y-4 pt-1">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        
+        {/* Section Header with Add Track Button */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-1">
+          <div>
+            <h2 className="text-lg sm:text-xl font-bold text-white flex items-center gap-2">
+              <Layers size={20} className="text-brand-accent" />
+              Trilhas do Conhecimento & Áreas de Estudo
+              <span className="text-xs font-mono font-normal text-gray-400">({trackStats.length})</span>
+            </h2>
+            <p className="text-xs text-gray-400">
+              Gerencie suas áreas de especialização, acesse matérias e domine os 20% de Pareto.
+            </p>
+          </div>
+
+          {onAddTrack && (
+            <button
+              onClick={onAddTrack}
+              className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all shadow-md shadow-blue-600/20 flex items-center gap-2 self-start sm:self-auto active:scale-95"
+            >
+              <Plus size={16} />
+              <span>Nova Área de Estudo</span>
+            </button>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {trackStats.map((track) => {
             return (
               <div
@@ -409,33 +444,66 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 />
 
                 <div>
-                  {/* Topo do Card da Trilha: Ícone + Número de Matérias */}
+                  {/* Topo do Card da Trilha: Ícone + Ações (Editar/Excluir) + Número de Matérias */}
                   <div className="flex items-center justify-between mb-4">
                     <div 
-                      className="w-12 h-12 rounded-xl flex items-center justify-center text-white shadow-lg transition-transform group-hover:scale-105"
+                      className="w-12 h-12 rounded-xl flex items-center justify-center text-white shadow-lg transition-transform group-hover:scale-105 shrink-0"
                       style={{ backgroundColor: `${track.color}25`, border: `1px solid ${track.color}60` }}
                     >
-                      {track.iconName === 'Database' && <Database size={24} style={{ color: track.color }} />}
-                      {track.iconName === 'Brain' && <Brain size={24} style={{ color: track.color }} />}
-                      {track.iconName === 'ShieldAlert' && <ShieldAlert size={24} style={{ color: track.color }} />}
+                      <TrackIcon name={track.iconName} size={24} style={{ color: track.color }} />
                     </div>
 
-                    <span 
-                      className="text-xs font-mono font-bold px-3 py-1 rounded-full border"
-                      style={{ 
-                        backgroundColor: `${track.color}15`, 
-                        color: track.color, 
-                        borderColor: `${track.color}40` 
-                      }}
-                    >
-                      {track.totalTopics} Matérias
-                    </span>
+                    <div className="flex items-center gap-1.5">
+                      {/* Action buttons */}
+                      {onEditTrack && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onEditTrack(track);
+                          }}
+                          className="p-1.5 rounded-lg bg-white/5 hover:bg-white/15 text-gray-400 hover:text-white transition-colors"
+                          title="Editar esta área de estudo"
+                        >
+                          <Edit3 size={14} />
+                        </button>
+                      )}
+
+                      {onDeleteTrack && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onDeleteTrack(track.id);
+                          }}
+                          className="p-1.5 rounded-lg bg-white/5 hover:bg-red-500/20 text-gray-400 hover:text-red-400 transition-colors"
+                          title="Excluir esta área de estudo"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      )}
+
+                      <span 
+                        className="text-xs font-mono font-bold px-2.5 py-1 rounded-full border ml-1"
+                        style={{ 
+                          backgroundColor: `${track.color}15`, 
+                          color: track.color, 
+                          borderColor: `${track.color}40` 
+                        }}
+                      >
+                        {track.totalTopics} Matérias
+                      </span>
+                    </div>
                   </div>
 
                   {/* Nome Principal da Trilha */}
-                  <h3 className="text-xl font-bold text-white group-hover:text-white transition-colors mb-4">
+                  <h3 className="text-xl font-bold text-white group-hover:text-white transition-colors mb-2">
                     {track.name}
                   </h3>
+
+                  <p className="text-xs text-gray-400 line-clamp-2 mb-4 leading-relaxed">
+                    {track.subtitle}
+                  </p>
                 </div>
 
                 <div className="space-y-4 pt-2 border-t border-white/10">
