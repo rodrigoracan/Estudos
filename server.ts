@@ -2,7 +2,7 @@ import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import * as dotenv from 'dotenv';
-import { requireAuth, AuthRequest } from './src/middleware/auth.ts';
+import { requireAuth, type AuthRequest } from './src/middleware/auth.ts';
 import { 
   getOrCreateUser, 
   getUserTopicProgress, 
@@ -217,7 +217,7 @@ if (!isProd) {
   app.use(vite.middlewares);
 } else {
   app.use(express.static(path.resolve(__dirname, 'dist')));
-  app.get('*', (_req, res) => {
+  app.use((_req, res) => {
     res.sendFile(path.resolve(__dirname, 'dist', 'index.html'));
   });
 }

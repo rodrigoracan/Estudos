@@ -10,6 +10,7 @@ import {
   BarChart, Bar, Cell, ReferenceLine, Label
 } from 'recharts';
 import { GlassCard } from './ui/GlassCard';
+import { YouTubeBrandLogo, GoogleDriveBrandLogo } from './ui/BrandLogos';
 import { Topic, TrackId } from '../types';
 import { TRACKS_DATA } from '../syllabusData';
 
@@ -86,9 +87,26 @@ export const Dashboard: React.FC<DashboardProps> = ({
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
+  const changeDay = (offset: number) => {
+    const newDate = new Date(currentDate);
+    newDate.setDate(newDate.getDate() + offset);
+    setCurrentDate(newDate);
+  };
+
   const changeMonth = (offset: number) => {
-    const newDate = new Date(currentDate.setMonth(currentDate.getMonth() + offset));
-    setCurrentDate(new Date(newDate));
+    const newDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + offset, 1);
+    const daysInNewMonth = new Date(newDate.getFullYear(), newDate.getMonth() + 1, 0).getDate();
+    newDate.setDate(Math.min(currentDate.getDate(), daysInNewMonth));
+    setCurrentDate(newDate);
+  };
+
+  const selectDay = (day: number) => {
+    const newDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+    setCurrentDate(newDate);
+  };
+
+  const goToToday = () => {
+    setCurrentDate(new Date());
   };
 
   // Metrics computation across tracks
@@ -281,72 +299,148 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
         </GlassCard>
 
-        {/* CARD 2: CALENDÁRIO */}
+        {/* CARD 2: CALENDÁRIO INTERATIVO */}
         <GlassCard className="flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between mb-3 pb-2 border-b border-white/10">
+            <div className="flex items-center justify-between mb-2 pb-2 border-b border-white/10">
               <span className="text-xs uppercase text-gray-300 font-bold tracking-wider flex items-center gap-1.5">
                 <CalendarIcon size={15} className="text-brand-accent" />
                 Calendário
               </span>
-              <span className="text-[10px] text-brand-accent bg-brand-primary/20 px-2.5 py-0.5 rounded-full font-mono font-bold border border-brand-primary/30">
-                {currentDate.getFullYear()}
-              </span>
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={goToToday}
+                  className="text-[10px] text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 px-2 py-0.5 rounded font-medium transition-colors"
+                  title="Voltar para a data de hoje"
+                >
+                  Hoje
+                </button>
+                <span className="text-[10px] text-brand-accent bg-brand-primary/20 px-2 py-0.5 rounded-full font-mono font-bold border border-brand-primary/30">
+                  {currentDate.getFullYear()}
+                </span>
+              </div>
             </div>
 
-            <div className="flex items-center justify-between mb-3 px-1">
+            {/* Navegador de Mês */}
+            <div className="flex items-center justify-between mb-2 px-1">
               <button 
                 onClick={() => changeMonth(-1)} 
-                className="p-1.5 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition-colors"
+                className="p-1 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition-colors"
                 title="Mês anterior"
               >
-                <ChevronLeft size={18}/>
+                <ChevronLeft size={16}/>
               </button>
               <div className="text-center">
-                <span className="block text-lg font-bold text-white">{monthNames[currentDate.getMonth()]}</span>
+                <span className="text-sm font-bold text-white tracking-wide">
+                  {monthNames[currentDate.getMonth()]}
+                </span>
               </div>
               <button 
                 onClick={() => changeMonth(1)} 
-                className="p-1.5 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition-colors"
+                className="p-1 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition-colors"
                 title="Próximo mês"
               >
-                <ChevronRight size={18}/>
+                <ChevronRight size={16}/>
               </button>
+            </div>
+
+            {/* Stepper do Dia Ativo: atualiza o número do dia e o dia da semana juntos */}
+            <div className="flex items-center justify-between p-2.5 bg-brand-dark/70 rounded-xl border border-white/5 mb-2.5">
+              <button
+                onClick={() => changeDay(-1)}
+                className="p-1.5 hover:bg-white/10 text-gray-400 hover:text-brand-accent rounded-lg transition-colors"
+                title="Dia anterior (muda número e dia da semana)"
+              >
+                <ChevronLeft size={18} />
+              </button>
+
+              <div className="text-center">
+                <div className="flex items-center justify-center gap-1.5">
+                  <span className="text-3xl font-extrabold text-brand-accent font-mono">
+                    {currentDate.getDate()}
+                  </span>
+                  <span className="text-xs text-gray-400">de</span>
+                  <span className="text-xs text-gray-300 font-medium">
+                    {monthNames[currentDate.getMonth()]}
+                  </span>
+                </div>
+                <p className="text-gray-300 text-xs capitalize mt-0.5 font-medium">
+                  {currentDate.toLocaleDateString('pt-BR', { weekday: 'long' })}
+                </p>
+              </div>
+
+              <button
+                onClick={() => changeDay(1)}
+                className="p-1.5 hover:bg-white/10 text-gray-400 hover:text-brand-accent rounded-lg transition-colors"
+                title="Próximo dia (muda número e dia da semana)"
+              >
+                <ChevronRight size={18} />
+              </button>
+            </div>
+
+            {/* Mini Grid com os dias do mês */}
+            <div>
+              <div className="grid grid-cols-7 gap-1 text-center text-[10px] text-gray-400 font-medium mb-1">
+                <span>D</span><span>S</span><span>T</span><span>Q</span><span>Q</span><span>S</span><span>S</span>
+              </div>
+              <div className="grid grid-cols-7 gap-1 text-center">
+                {Array.from({ 
+                  length: new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay() 
+                }).map((_, i) => (
+                  <span key={`empty-${i}`} className="h-6" />
+                ))}
+                {Array.from({ 
+                  length: new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate() 
+                }, (_, i) => i + 1).map((day) => {
+                  const isSelected = day === currentDate.getDate();
+                  const isToday = 
+                    new Date().getDate() === day &&
+                    new Date().getMonth() === currentDate.getMonth() &&
+                    new Date().getFullYear() === currentDate.getFullYear();
+
+                  return (
+                    <button
+                      key={day}
+                      onClick={() => selectDay(day)}
+                      className={`h-6 w-full rounded flex items-center justify-center text-[11px] font-mono transition-all ${
+                        isSelected
+                          ? 'bg-brand-accent text-slate-950 font-bold shadow-md'
+                          : isToday
+                          ? 'border border-brand-accent/60 text-brand-accent font-semibold'
+                          : 'text-gray-300 hover:bg-white/10 hover:text-white'
+                      }`}
+                    >
+                      {day}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
 
-          <div className="text-center p-4 bg-brand-dark/60 rounded-xl border border-white/5 my-1">
-            <p className="text-gray-400 text-[10px] uppercase tracking-wider mb-0.5">Sessão Ativa</p>
-            <p className="text-4xl font-extrabold text-brand-accent font-mono">{currentDate.getDate()}</p>
-            <p className="text-gray-300 text-xs capitalize mt-0.5 font-medium">
-              {currentDate.toLocaleDateString('pt-BR', { weekday: 'long' })}
-            </p>
-          </div>
-
-          <div className="pt-2 text-center border-t border-white/5 text-[11px] text-gray-500">
-            Ciclo diário de estudos ativo
+          <div className="pt-2 text-center border-t border-white/5 text-[10px] text-gray-400 flex items-center justify-center gap-1.5 mt-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+            <span>Ciclo diário de estudos ativo</span>
           </div>
         </GlassCard>
 
-        {/* CARD 3: VIDEOAULAS & GOOGLE DRIVE */}
+        {/* CARD 3: YOUTUBE & GOOGLE DRIVE (SEM FUNDO / TRANSPARENTE, APENAS OS LOGOS COM ESCRITA BRANCA) */}
         <div className="flex flex-col justify-between gap-4">
-          <GlassCard 
+          
+          {/* YOUTUBE */}
+          <div 
             onClick={() => onProtectedAction(() => window.open('https://youtube.com', '_blank'))} 
-            className="flex-1 flex items-center justify-between p-5 hover:bg-red-600/15 border-white/10 hover:border-red-500/40 group cursor-pointer transition-all"
+            className="flex-1 flex items-center justify-between px-6 py-6 rounded-2xl bg-transparent hover:bg-white/5 border border-white/10 hover:border-red-500/40 group cursor-pointer transition-all shadow-sm"
+            title="Abrir YouTube"
           >
-            <div className="flex items-center gap-4">
-              <div className="w-13 h-13 rounded-2xl bg-red-500/15 border border-red-500/30 flex items-center justify-center text-red-400 group-hover:scale-105 transition-transform shadow-lg">
-                <Youtube size={28} />
-              </div>
-              <div>
-                <h4 className="text-base font-bold text-white group-hover:text-red-300 transition-colors">Videoaulas</h4>
-                <p className="text-xs text-gray-400">Aulas e conteúdos recomendados</p>
-              </div>
+            <div className="flex items-center gap-3">
+              <YouTubeBrandLogo className="h-9 w-auto group-hover:scale-105 transition-transform" />
             </div>
             <ArrowRight size={18} className="text-gray-500 group-hover:text-red-400 group-hover:translate-x-1 transition-all" />
-          </GlassCard>
+          </div>
 
-          <GlassCard 
+          {/* GOOGLE DRIVE */}
+          <div 
             onClick={() => {
               if (onOpenWorkspace) {
                 onOpenWorkspace();
@@ -354,19 +448,15 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 onProtectedAction(() => window.open('https://drive.google.com', '_blank'));
               }
             }} 
-            className="flex-1 flex items-center justify-between p-5 hover:bg-cyan-600/15 border-white/10 hover:border-cyan-500/40 group cursor-pointer transition-all"
+            className="flex-1 flex items-center justify-between px-6 py-6 rounded-2xl bg-transparent hover:bg-white/5 border border-white/10 hover:border-cyan-500/40 group cursor-pointer transition-all shadow-sm"
+            title="Abrir Google Drive"
           >
-            <div className="flex items-center gap-4">
-              <div className="w-13 h-13 rounded-2xl bg-cyan-500/15 border border-cyan-500/30 flex items-center justify-center text-cyan-400 group-hover:scale-105 transition-transform shadow-lg">
-                <HardDrive size={28} />
-              </div>
-              <div>
-                <h4 className="text-base font-bold text-white group-hover:text-cyan-300 transition-colors">Google Drive</h4>
-                <p className="text-xs text-gray-400">Armazenamento e backup de notas</p>
-              </div>
+            <div className="flex items-center gap-3">
+              <GoogleDriveBrandLogo className="h-9 w-auto group-hover:scale-105 transition-transform" />
             </div>
             <ArrowRight size={18} className="text-gray-500 group-hover:text-cyan-400 group-hover:translate-x-1 transition-all" />
-          </GlassCard>
+          </div>
+
         </div>
 
       </div>
